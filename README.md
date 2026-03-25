@@ -28,20 +28,83 @@ The entire analysis runs **on-device** and does not require an internet connecti
 
 ---
 
-## 📦 Installation
+## Windows Installation
 
-### 0. Download Node.js and git
+### Step 1 — Install Node.js
 
-Visit the following website and download:
+1. Go to: https://nodejs.org/en
+2. Download the **LTS** version
+3. Run the `.msi` installer
+4. Make sure **"Add to PATH"** is checked during installation
+5. Finish installation and restart your computer
 
-- nodejs: https://nodejs.org/en
-- git: https://git-scm.com/install/windows
+### Step 2 — Install Git
 
-### 1. Clone the Repository
+1. Go to: https://git-scm.com/install/windows
+2. Download and run the installer
+3. Use default settings during installation
+
+### Step 3 — Verify Installation
+
+Open **Command Prompt** and run:
+
+```bash
+node -v
+npm -v
+npx -v
+git --version
+```
+
+If all commands show version numbers, installation was successful.
+
+---
+
+## Mac Installation
+
+### Step 1 — Install Homebrew (Recommended)
+
+Open **Terminal** and run:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Step 2 — Install Node.js and Git
+
+```bash
+brew install node
+brew install git
+```
+
+### Step 3 — Verify Installation
+
+In Terminal, run:
+
+```bash
+node -v
+npm -v
+npx -v
+git --version
+```
+
+If all commands show version numbers, installation was successful.
+
+---
+
+## 1. Clone the Repository
+
+### Windows:
 
 ```bash
 git clone https://github.com/connorw8/SmartDiaper
 cd .\SmartDiaper\
+```
+
+### Mac:
+
+```bash
+git clone https://github.com/connorw8/SmartDiaper
+cd SmartDiaper
 ```
 
 ### 2. Install Dependencies
