@@ -16,10 +16,11 @@ import { Stack } from "expo-router";
 import { Buffer } from "buffer";
 import { PNG } from "pngjs/browser"; // Use a browser-compatible version for RN
 import { phTable } from "../data/phTable"; // Import the pH reference table from a separate file
+import * as ImagePicker from "expo-image-picker";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 const VIEWFINDER_SIZE = 240;
-const SLIDER_HEIGHT = 200;
+const SLIDER_HEIGHT = 350;
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -33,159 +34,6 @@ export default function App() {
 
   // Calibration: Moves the crop box UP cause it is misaligned
   const Y_CROP_OFFSET = -100;
-
-  // const phTable = [
-  //   {
-  //     label: "pH 0",
-  //     value: 0,
-  //     referenceSquares: [
-  //       { h: 340 }, // Row 0: Dark Magenta
-  //       { h: 32 }, // Row 1: Pale Peach/Orange
-  //       { h: 202 }, // Row 2: Light Cyan
-  //       { h: 62 }, // Row 3: Yellow-Green
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 1",
-  //     value: 1,
-  //     referenceSquares: [
-  //       { h: 359 }, // Row 0: Dark Maroon/Red
-  //       { h: 36 }, // Row 1: Yellow-Orange
-  //       { h: 200 }, // Row 2: Light Cyan
-  //       { h: 64 }, // Row 3: Yellow-Green
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 2",
-  //     value: 2,
-  //     referenceSquares: [
-  //       { h: 21 }, // Row 0: Orange-Red
-  //       { h: 36 }, // Row 1: Yellow-Orange
-  //       { h: 200 }, // Row 2: Light Cyan
-  //       { h: 63 }, // Row 3: Yellow-Green
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 3",
-  //     value: 3,
-  //     referenceSquares: [
-  //       { h: 32 }, // Row 0: Orange
-  //       { h: 37 }, // Row 1: Light Orange
-  //       { h: 199 }, // Row 2: Light Cyan
-  //       { h: 66 }, // Row 3: Yellow-Green
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 4",
-  //     value: 4,
-  //     referenceSquares: [
-  //       { h: 38 }, // Row 0: Yellow-Orange
-  //       { h: 36 }, // Row 1: Pale Yellow-Orange
-  //       { h: 200 }, // Row 2: Light Cyan
-  //       { h: 66 }, // Row 3: Yellow-Green
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 5",
-  //     value: 5,
-  //     referenceSquares: [
-  //       { h: 44 }, // Row 0: Yellow
-  //       { h: 39 }, // Row 1: Pale Yellow
-  //       { h: 201 }, // Row 2: Light Cyan/Blue
-  //       { h: 65 }, // Row 3: Yellow-Green
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 6",
-  //     value: 6,
-  //     referenceSquares: [
-  //       { h: 49 }, // Row 0: Greenish-Yellow
-  //       { h: 49 }, // Row 1: Pale Yellow
-  //       { h: 201 }, // Row 2: Light Blue
-  //       { h: 66 }, // Row 3: Yellow-Green
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 7",
-  //     value: 7,
-  //     referenceSquares: [
-  //       { h: 49 }, // Row 0: Olive/Yellow-Green
-  //       { h: 66 }, // Row 1: Pale Tan/Khaki
-  //       { h: 200 }, // Row 2: Light Blue
-  //       { h: 75 }, // Row 3: Olive
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 8",
-  //     value: 8,
-  //     referenceSquares: [
-  //       { h: 50 }, // Row 0: Olive/Yellow-Green
-  //       { h: 130 }, // Row 1: Dark Teal/Blue-Green
-  //       { h: 200 }, // Row 2: Light Blue
-  //       { h: 67 }, // Row 3: Olive
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 9",
-  //     value: 9,
-  //     referenceSquares: [
-  //       { h: 49 }, // Row 0: Olive
-  //       { h: 207 }, // Row 1: Medium Blue
-  //       { h: 205 }, // Row 2: Light-Medium Blue
-  //       { h: 70 }, // Row 3: Olive
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 10",
-  //     value: 10,
-  //     referenceSquares: [
-  //       { h: 49 }, // Row 0: Olive
-  //       { h: 212 }, // Row 1: Medium Blue
-  //       { h: 220 }, // Row 2: Periwinkle/Blue-Purple
-  //       { h: 60 }, // Row 3: Olive/Brownish
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 11",
-  //     value: 11,
-  //     referenceSquares: [
-  //       { h: 49 }, // Row 0: Olive
-  //       { h: 213 }, // Row 1: Medium Blue
-  //       { h: 246 }, // Row 2: Purple
-  //       { h: 47 }, // Row 3: Brown/Orange-Brown
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 12",
-  //     value: 12,
-  //     referenceSquares: [
-  //       { h: 49 }, // Row 0: Olive
-  //       { h: 211 }, // Row 1: Medium Blue
-  //       { h: 280 }, // Row 2: Purple
-  //       { h: 35 }, // Row 3: Orange-Brown
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 13",
-  //     value: 13,
-  //     referenceSquares: [
-  //       { h: 48 }, // Row 0: Olive
-  //       { h: 213 }, // Row 1: Medium Blue
-  //       { h: 279 }, // Row 2: Dark Purple
-  //       { h: 23 }, // Row 3: Dark Red
-  //     ],
-  //   },
-  //   {
-  //     label: "pH 14",
-  //     value: 14,
-  //     referenceSquares: [
-  //       { h: 49 }, // Row 0: Olive
-  //       { h: 213 }, // Row 1: Medium Blue
-  //       { h: 280 }, // Row 2: Darker Purple
-  //       { h: 10 }, // Row 3: Dark Red
-  //     ],
-  //   },
-  // ];
 
   // --- CUSTOM SLIDER LOGIC ---
   const panResponder = useRef(
@@ -206,7 +54,29 @@ export default function App() {
       },
     }),
   ).current;
+  //upload image button logic for testing without camera
+  const pickImage = async () => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
+      if (!permission.granted) {
+        alert("Permission required to access photos.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        setPreviewUri(result.assets[0].uri);
+      }
+    } catch (e) {
+      alert("Image selection failed: " + e.message);
+    }
+  };
   // --- COLOR LOGIC ---
   const rgbToHsl = (r, g, b) => {
     const rNorm = r / 255,
@@ -356,7 +226,7 @@ export default function App() {
 
       // SINGLE LOG PER COLUMN: Shows you everything in one line
       const statusLabel =
-        best.score < HUE_THRESHOLD ? `✅ ${best.label}` : "❌ No Match";
+        best.score < HUE_THRESHOLD ? `${best.label}` : "No Match";
       console.log(
         `Col ${colIdx} | L-Values: [${sValues}] | Active: ${best.activeCount}/4 | Result: ${statusLabel} (Score: ${best.score.toFixed(1)})`,
       );
@@ -503,7 +373,7 @@ export default function App() {
               </View>
             </View>
 
-            {/* Medical Grade Viewfinder */}
+            {/* Viewfinder */}
             <View style={styles.viewfinder}>
               <RenderAlignmentDots />
             </View>
@@ -517,7 +387,7 @@ export default function App() {
               </Text>
             </View>
 
-            {/* Professional Zoom Slider */}
+            {/* Zoom Slider */}
             <View
               style={styles.sideSliderContainer}
               {...panResponder.panHandlers}
@@ -538,7 +408,20 @@ export default function App() {
               </View>
               <Text style={styles.zoomValText}>{Math.round(zoom * 100)}%</Text>
             </View>
-
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                bottom: 20,
+                right: 20,
+                backgroundColor: "#3b83f687",
+                paddingHorizontal: 12,
+                paddingVertical: 12,
+                borderRadius: 10,
+              }}
+              onPress={pickImage}
+            >
+              <Text style={{ color: "#FFF", fontWeight: "600" }}>Upload</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.captureBtn}
               activeOpacity={0.8}
@@ -707,7 +590,7 @@ const styles = StyleSheet.create({
   // Main Containers
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC", // Soft medical gray/white
+    backgroundColor: "#F8FAFC",
   },
   previewContainer: {
     flex: 1,
@@ -736,8 +619,8 @@ const styles = StyleSheet.create({
     width: VIEWFINDER_SIZE,
     height: VIEWFINDER_SIZE,
     borderWidth: 2,
-    borderColor: "#3B82F6", // Professional Diagnostic Blue
-    borderRadius: 8, // More "Scientific Instrument" feel than round
+    borderColor: "#3B82F6",
+    borderRadius: 8,
     backgroundColor: "rgba(59, 130, 246, 0.03)",
   },
   dot: {
