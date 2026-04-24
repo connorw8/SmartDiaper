@@ -1,22 +1,22 @@
-import React, { useState, useRef } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  ActivityIndicator,
-  Dimensions,
-  PanResponder,
-} from "react-native";
+import { Buffer } from "buffer";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
-import { Stack } from "expo-router";
-import { Buffer } from "buffer";
-import { PNG } from "pngjs/browser"; // Use a browser-compatible version for RN
-import { phTable } from "../data/phTable"; // Import the pH reference table from a separate file
 import * as ImagePicker from "expo-image-picker";
+import { Stack } from "expo-router";
+import { PNG } from "pngjs/browser"; // Use a browser-compatible version for RN
+import { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { phTable } from "../data/phTable"; // Import the pH reference table from a separate file
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 const VIEWFINDER_SIZE = 240;
@@ -167,14 +167,10 @@ export default function App() {
 
   const getPatternMatches = (allSquares) => {
     const finalMatches = [];
-
-    // CONFIGURATION
-    const HUE_THRESHOLD = 25;
-    //const MAX_LIGHTNESS = 80;
     const MIN_SATURATION = 13;
-    const UNTOUCHED_PENALTY = 8;
-
-    console.log(`--- Analysis Started (Threshold: ${MIN_SATURATION}%) ---`);
+    const VARIANCE_THRESHOLD = 200;
+    const MAX_AVG_OFFSET = 25;
+    console.log(`--- Analysis Started ---`);
 
     for (let colIdx = 0; colIdx < 4; colIdx++) {
       const scannedColumn = allSquares
@@ -183,68 +179,85 @@ export default function App() {
 
       if (scannedColumn.length !== 4) continue;
 
-      // PREPARE LOG DATA: Get all 4 saturation values for this column first
       const sValues = scannedColumn.map((p) => `${p.s}%`).join(", ");
+      const activePads = scannedColumn.filter((p) => p.s >= MIN_SATURATION);
+      const activeIndices = activePads.map((p) => p.row);
+
+      if (activePads.length === 0) {
+        console.log(`Col ${colIdx} | No active pads — skipping`);
+        finalMatches.push({
+          column: colIdx,
+          score: Infinity,
+          match: { label: "No Match", value: null },
+        });
+        continue;
+      }
 
       let best = {
         label: "No Match",
         score: Infinity,
         value: null,
         activeCount: 0,
+        variance: null,
+        avgOffset: null,
       };
 
+      const candidates = [];
+
       phTable.forEach((ref) => {
-        let totalErr = 0;
-        let activePadsInCol = 0;
+        const offsets = activePads.map((pad, i) =>
+          getHueDistance(pad.h, ref.referenceSquares[activeIndices[i]].h),
+        );
 
-        for (let i = 0; i < 4; i++) {
-          const pad = scannedColumn[i];
+        const avgOffset =
+          offsets.reduce((sum, o) => sum + o, 0) / offsets.length;
 
-          // LOGIC: Check if the pad meets the saturation requirement
-          if (pad.s >= MIN_SATURATION) {
-            const err = getHueDistance(pad.h, ref.referenceSquares[i].h);
-            totalErr += err;
-            activePadsInCol++;
-          }
-        }
+        const variance =
+          offsets.reduce((sum, o) => sum + Math.pow(o - avgOffset, 2), 0) /
+          offsets.length;
 
-        if (activePadsInCol > 0) {
-          let avgErr = totalErr / activePadsInCol;
-          const reliabilityPenalty = (4 - activePadsInCol) * UNTOUCHED_PENALTY;
-          const finalScore = avgErr + reliabilityPenalty;
+        const rejected = variance > VARIANCE_THRESHOLD;
+        candidates.push({ label: ref.label, avgOffset, variance, rejected });
 
-          if (finalScore < best.score) {
-            best = {
-              label: ref.label,
-              score: finalScore,
-              value: ref.value,
-              activeCount: activePadsInCol,
-            };
-          }
+        if (rejected) return;
+
+        if (avgOffset < best.score) {
+          best = {
+            label: ref.label,
+            score: avgOffset,
+            value: ref.value,
+            activeCount: activePads.length,
+            variance,
+            avgOffset,
+          };
         }
       });
 
-      // SINGLE LOG PER COLUMN: Shows you everything in one line
-      const statusLabel =
-        best.score < HUE_THRESHOLD ? `${best.label}` : "No Match";
       console.log(
-        `Col ${colIdx} | L-Values: [${sValues}] | Active: ${best.activeCount}/4 | Result: ${statusLabel} (Score: ${best.score.toFixed(1)})`,
+        `\nCol ${colIdx} | S-Values: [${sValues}] | Active: ${activePads.length}/4`,
+      );
+      candidates.forEach((c) => {
+        const winner = !c.rejected && c.avgOffset === best.score;
+        console.log(
+          `  ${winner ? "→ WINNER" : "        "} ${c.label.padEnd(6)} | avg offset: ${c.avgOffset.toFixed(1).padStart(5)}° | variance: ${c.variance.toFixed(1).padStart(7)} | ${c.rejected ? "REJECTED — inconsistent offsets" : "passed"}`,
+        );
+      });
+
+      const isMatch = best.value !== null && best.score < MAX_AVG_OFFSET;
+      console.log(
+        `  Result: ${isMatch ? `${best.label} (shifted ${best.score.toFixed(1)}° uniformly — likely lighting)` : "No Match"}\n`,
       );
 
       finalMatches.push({
         column: colIdx,
         score: best.score,
-        match:
-          best.score < HUE_THRESHOLD
-            ? best
-            : { label: "No Match", value: null },
+        match: isMatch ? best : { label: "No Match", value: null },
       });
     }
 
     console.log("--- Analysis Complete ---");
     return finalMatches;
   };
-
   const processImage = async (uri) => {
     setIsProcessing(true);
     try {
