@@ -169,9 +169,9 @@ export default function App() {
     const finalMatches = [];
 
     // CONFIGURATION
-    const HUE_THRESHOLD = 15;
+    const HUE_THRESHOLD = 25;
     //const MAX_LIGHTNESS = 80;
-    const MIN_SATURATION = 20;
+    const MIN_SATURATION = 13;
     const UNTOUCHED_PENALTY = 8;
 
     console.log(`--- Analysis Started (Threshold: ${MIN_SATURATION}%) ---`);
